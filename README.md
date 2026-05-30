@@ -1,4 +1,5 @@
 # 🌸 SafePath — Fix Our City Together
+[🔗 Click here to view the live interactive map application](https://safepath-tx4t.onrender.com)
 
 SafePath is a community-driven web platform where users can report city issues, view safety scores, and send emergency SOS alerts. It also rewards users with coins for contributing useful reports.
 
