@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafePath — Fix Our City Together 🌸</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Pacifico&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── LIGHT THEME ── */
+    [data-theme="light"] {
+      --bg:        #e8f4fd;
+      --white:     #ffffff;
+      --soft:      #f7f0ff;
+      --panel:     #fffbff;
+      --border:    #e8e0f0;
+      --purple:    #7c3aed;
+      --purple-lt: #ede9fe;
+      --pink:      #ec4899;
+      --pink-lt:   #fce7f3;
+      --green:     #10b981;
+      --green-lt:  #d1fae5;
+      --orange:    #f59e0b;
+      --orange-lt: #fef3c7;
+      --red:       #ef4444;
+      --red-lt:    #fee2e2;
+      --text:      #3b1f6e;
+      --muted:     #9d8ec0;
+      --shadow:    0 4px 24px rgba(124,58,237,0.10);
+      --shadow-sm: 0 2px 8px rgba(124,58,237,0.08);
+      --blob1:     rgba(124,58,237,0.18);
+      --blob2:     rgba(236,72,153,0.18);
+      --header-bg: rgba(255,255,255,0.92);
+    }
+
+    /* ── DARK THEME ── */
+    [data-theme="dark"] {
+      --bg:        #0f0a1e;
+      --white:     #1a1030;
+      --soft:      #1f1540;
+      --panel:     #160e2e;
+      --border:    #2d1f5e;
+      --purple:    #a78bfa;
+      --purple-lt: #2d1f5e;
+      --pink:      #f472b6;
+      --pink-lt:   #2d1040;
+      --green:     #34d399;
+      --green-lt:  #052e16;
+      --orange:    #fbbf24;
+      --orange-lt: #1c1005;
+      --red:       #f87171;
+      --red-lt:    #2d0a0a;
+      --text:      #e9d5ff;
+      --muted:     #7c6aaa;
+      --shadow:    0 4px 24px rgba(0,0,0,0.4);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+      --blob1:     rgba(124,58,237,0.12);
+      --blob2:     rgba(236,72,153,0.10);
+      --header-bg: rgba(15,10,30,0.92);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      overflow: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 1;
+      pointer-events: none;
+      z-index: 0;
+      transition: background 0.3s;
+    }
+    body::before {
+      width: 500px; height: 500px;
+      background: var(--blob1);
+      top: -100px; left: -100px;
+    }
+    body::after {
+      width: 400px; height: 400px;
+      background: var(--blob2);
+      bottom: -80px; right: 320px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: 62px;
+      background: var(--header-bg);
+      border-bottom: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(12px);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .logo {
+      font-family: 'Pacifico', cursive;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-sub {
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--muted); margin-left: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .user-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--purple-lt);
+      border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 6px 14px;
+      font-size: 0.8rem; font-weight: 700; color: var(--purple);
+      transition: background 0.3s, color 0.3s;
+    }
+    .coins-pill {
+      background: var(--orange-lt);
+      border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 6px 14px;
+      font-size: 0.8rem; font-weight: 800; color: var(--orange);
+      display: flex; align-items: center; gap: 6px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ── THEME TOGGLE ── */
+    .theme-toggle {
+      background: var(--soft);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 6px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px;
+    }
+    .theme-toggle:hover {
+      border-color: var(--purple);
+      transform: rotate(20deg) scale(1.1);
+    }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: flex;
+      padding-top: 62px;
+      height: 100vh;
+      position: relative; z-index: 1;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 330px; min-width: 330px;
+      background: var(--panel);
+      border-right: 2px solid var(--border);
+      overflow-y: auto;
+      display: flex; flex-direction: column;
+      box-shadow: var(--shadow);
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── TABS ── */
+    .tabs {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      border-bottom: 2px solid var(--border);
+      position: sticky; top: 0;
+      background: var(--white);
+      z-index: 10;
+      transition: background 0.3s;
+    }
+    .tab {
+      padding: 12px 4px; text-align: center;
+      font-size: 0.7rem; font-weight: 800;
+      color: var(--muted); cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s; letter-spacing: 0.02em;
+    }
+    .tab:hover { color: var(--purple); background: var(--soft); }
+    .tab.active { color: var(--purple); border-bottom-color: var(--purple); background: var(--soft); }
+
+    /* ── PANELS ── */
+    .panel { display: none; padding: 20px; flex-direction: column; gap: 14px; }
+    .panel.active { display: flex; }
+
+    .section-head {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 1rem; font-weight: 800; color: var(--text);
+    }
+    .section-head .emoji { font-size: 1.2rem; }
+    .hint { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: -8px; }
+
+    /* ── INPUTS ── */
+    input, select {
+      width: 100%;
+      background: var(--white);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.88rem; font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.3s, color 0.3s;
+    }
+    input:focus, select:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+    }
+    input::placeholder { color: var(--muted); font-weight: 500; }
+    select option { background: var(--white); color: var(--text); }
+
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%; padding: 12px;
+      border: none; border-radius: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem; font-weight: 800;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple), #9333ea);
+      color: white;
+      box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,0.45); }
+    .btn-danger {
+      background: linear-gradient(135deg, var(--red), var(--pink));
+      color: white;
+      box-shadow: 0 4px 14px rgba(239,68,68,0.3);
+    }
+    .btn-danger:hover { transform: translateY(-1px); }
+    .btn-outline {
+      background: var(--white);
+      border: 2px solid var(--border);
+      color: var(--purple); font-weight: 700;
+      transition: all 0.2s, background 0.3s;
+    }
+    .btn-outline:hover { border-color: var(--purple); background: var(--soft); }
+
+    /* ── SEVERITY ── */
+    .sev-group { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .sev-opt {
+      padding: 10px 4px; text-align: center;
+      border-radius: 12px; border: 2px solid var(--border);
+      font-size: 0.75rem; font-weight: 800;
+      cursor: pointer; transition: all 0.2s;
+      color: var(--muted); background: var(--white);
+    }
+    .sev-opt:hover { transform: translateY(-1px); }
+    .sev-opt[data-val="Low"].selected   { border-color: var(--green);  color: var(--green);  background: var(--green-lt); }
+    .sev-opt[data-val="Medium"].selected{ border-color: var(--orange); color: var(--orange); background: var(--orange-lt); }
+    .sev-opt[data-val="High"].selected  { border-color: var(--red);    color: var(--red);    background: var(--red-lt); }
+
+    /* ── OUTPUT CARD ── */
+    .output-card {
+      background: var(--soft);
+      border: 2px solid var(--border);
+      border-radius: 14px; padding: 14px;
+      font-size: 0.82rem; font-weight: 600;
+      line-height: 2; color: var(--text);
+      display: none;
+      animation: popIn 0.3s ease;
+      transition: background 0.3s;
+    }
+    .output-card.visible { display: block; }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .out-label { color: var(--muted); font-weight: 600; }
+    .out-val   { color: var(--purple); font-weight: 800; }
+
+    /* score bar */
+    .score-bar-bg { height: 10px; background: var(--border); border-radius: 10px; overflow: hidden; margin-top: 4px; }
+    .score-bar-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
+
+    /* leaderboard */
+    .lb-list { display: flex; flex-direction: column; gap: 8px; }
+    .lb-item {
+      display: flex; align-items: center;
+      background: var(--white); border: 2px solid var(--border);
+      border-radius: 14px; padding: 10px 14px;
+      font-size: 0.82rem; font-weight: 700;
+      transition: transform 0.15s, border-color 0.15s, background 0.3s;
+    }
+    .lb-item:hover { transform: translateX(3px); border-color: var(--purple); }
+    .lb-rank { font-size: 1rem; min-width: 28px; }
+    .lb-name { flex: 1; margin-left: 6px; }
+    .lb-coins { color: var(--orange); font-weight: 800; background: var(--orange-lt); padding: 2px 10px; border-radius: 20px; }
+
+    /* report cards */
+    .report-list { display: flex; flex-direction: column; gap: 8px; }
+    .report-card {
+      background: var(--white); border: 2px solid var(--border);
+      border-radius: 14px; padding: 12px 14px;
+      transition: transform 0.15s, border-color 0.15s, background 0.3s;
+    }
+    .report-card:hover { transform: translateX(3px); border-color: var(--purple); }
+    .report-card .r-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+    .report-card .r-issue { font-weight: 800; font-size: 0.85rem; flex: 1; }
+    .report-card .r-meta { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+
+    .sev-tag { font-size: 0.68rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+    .sev-Low    { background: var(--green-lt);  color: var(--green); }
+    .sev-Medium { background: var(--orange-lt); color: var(--orange); }
+    .sev-High   { background: var(--red-lt);    color: var(--red); }
+    .sev-URGENT { background: var(--pink-lt);   color: var(--pink); }
+
+    /* ── MAP ── */
+    .map-wrap { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; }
+
+    .map-controls {
+      position: absolute; top: 14px; right: 14px; z-index: 500;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .map-btn {
+      background: var(--white);
+      border: 2px solid var(--border);
+      color: var(--text); padding: 8px 16px;
+      border-radius: 20px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.78rem; font-weight: 800;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+    .map-btn:hover, .map-btn.active { border-color: var(--purple); color: var(--purple); background: var(--soft); }
+
+    .map-legend {
+      position: absolute; bottom: 20px; left: 14px; z-index: 500;
+      background: var(--white); border: 2px solid var(--border);
+      border-radius: 16px; padding: 12px 16px;
+      font-size: 0.75rem; font-weight: 700;
+      display: flex; flex-direction: column; gap: 6px;
+      box-shadow: var(--shadow-sm);
+      transition: background 0.3s;
+    }
+    .legend-title { font-weight: 800; color: var(--text); margin-bottom: 2px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+    .map-tip {
+      position: absolute; bottom: 20px; right: 14px; z-index: 500;
+      background: var(--purple-lt); border: 2px solid var(--border);
+      border-radius: 14px; padding: 10px 14px;
+      font-size: 0.75rem; font-weight: 700; color: var(--purple);
+      box-shadow: var(--shadow-sm);
+      transition: background 0.3s;
+    }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      border-radius: 16px; padding: 14px 20px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.85rem; font-weight: 700;
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      max-width: 300px; box-shadow: var(--shadow);
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { background: var(--green-lt);  color: var(--green);  border: 2px solid var(--green); }
+    #toast.error   { background: var(--red-lt);    color: var(--red);    border: 2px solid var(--red); }
+    #toast.info    { background: var(--purple-lt); color: var(--purple); border: 2px solid var(--purple); }
+
+    .divider { border: none; border-top: 2px dashed var(--border); margin: 2px 0; }
+
+    .welcome-banner {
+      border-radius: 16px; padding: 14px; text-align: center;
+    }
+    .welcome-banner-light {
+      background: linear-gradient(135deg, var(--purple-lt), var(--pink-lt));
+      border: 2px solid var(--border);
+    }
+    .welcome-banner-sos {
+      background: linear-gradient(135deg, var(--red-lt), var(--pink-lt));
+      border: 2px solid var(--border);
+    }
+    .welcome-banner .big { font-size: 1.8rem; }
+    .welcome-banner p { font-size: 0.8rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:baseline;gap:6px">
+    <div class="logo">SafePath</div>
+    <div class="logo-sub">🌸 Fix Our City Together</div>
+  </div>
+  <div class="header-right">
+    <div class="user-pill">👤 <span id="headerUser">Not logged in</span></div>
+    <div class="coins-pill">🪙 <span id="headerCoins">0</span> coins</div>
+    <!-- THEME TOGGLE -->
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle dark/light mode">🌙</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('register')">👤 Join</div>
+      <div class="tab" onclick="switchTab('report')">📝 Report</div>
+      <div class="tab" onclick="switchTab('sos')">🆘 SOS</div>
+      <div class="tab" onclick="switchTab('explore')">🔍 Explore</div>
+    </div>
+
+    <!-- JOIN -->
+    <div class="panel active" id="panel-register">
+      <div class="welcome-banner welcome-banner-light">
+        <div class="big">🏙️</div>
+        <div style="font-weight:800;font-size:1rem;color:var(--purple)">Welcome to SafePath!</div>
+        <p>Report city issues, earn coins, make your city better 💜</p>
+      </div>
+      <div class="section-head"><span class="emoji">✨</span> Create Account</div>
+      <input id="reg-username" placeholder="Pick a fun username"/>
+      <button class="btn btn-primary" onclick="register()">Create my account →</button>
+      <hr class="divider"/>
+      <div class="section-head"><span class="emoji">🔑</span> Already have one?</div>
+      <input id="login-username" placeholder="Enter your username"/>
+      <button class="btn btn-outline" onclick="loginUser()">Log me in</button>
+      <div id="reg-output" class="output-card"></div>
+    </div>
+
+    <!-- REPORT -->
+    <div class="panel" id="panel-report">
+      <div class="section-head"><span class="emoji">📍</span> Report an Issue</div>
+      <p class="hint">Tap the map to drop a pin automatically!</p>
+      <input id="r-city" placeholder="🏙️ Your city (e.g. bengaluru)"/>
+      <input id="r-location" placeholder="📌 Location name (e.g. MG Road)"/>
+      <input id="r-issue" placeholder="🔧 What's the problem?"/>
+      <div class="row2">
+        <input id="r-lat" placeholder="📍 Latitude"/>
+        <input id="r-lng" placeholder="📍 Longitude"/>
+      </div>
+      <div class="section-head" style="font-size:0.85rem"><span class="emoji">⚠️</span> How serious is it?</div>
+      <div class="sev-group">
+        <div class="sev-opt selected" data-val="Low" onclick="selectSev(this)">🟢<br>Minor</div>
+        <div class="sev-opt" data-val="Medium" onclick="selectSev(this)">🟡<br>Moderate</div>
+        <div class="sev-opt" data-val="High" onclick="selectSev(this)">🔴<br>Urgent</div>
+      </div>
+      <button class="btn btn-primary" onclick="sendReport()">Submit my report 🚀</button>
+      <div id="report-output" class="output-card"></div>
+    </div>
+
+    <!-- SOS -->
+    <div class="panel" id="panel-sos">
+      <div class="welcome-banner welcome-banner-sos">
+        <div class="big">🆘</div>
+        <div style="font-weight:800;font-size:1rem;color:var(--red)">Emergency Alert</div>
+        <p>Use this only for real emergencies. Help is on the way! 💪</p>
+      </div>
+      <input id="sos-city" placeholder="🏙️ Your city"/>
+      <input id="sos-location" placeholder="📌 Your exact location"/>
+      <input id="sos-issue" placeholder="🚨 Describe the emergency"/>
+      <div class="row2">
+        <input id="sos-lat" placeholder="📍 Latitude"/>
+        <input id="sos-lng" placeholder="📍 Longitude"/>
+      </div>
+      <button class="btn btn-danger" onclick="sendSOS()">🆘 Send Emergency Alert</button>
+      <div id="sos-output" class="output-card"></div>
+    </div>
+
+    <!-- EXPLORE -->
+    <div class="panel" id="panel-explore">
+      <div class="section-head"><span class="emoji">🏙️</span> City Safety Score</div>
+      <div style="display:flex;gap:8px">
+        <input id="score-city" placeholder="Enter city name" style="flex:1"/>
+        <button class="btn btn-outline" style="width:auto;padding:10px 16px" onclick="getCityScore()">Check</button>
+      </div>
+      <div id="score-output" class="output-card"></div>
+      <hr class="divider"/>
+      <div class="section-head"><span class="emoji">🏆</span> Leaderboard</div>
+      <button class="btn btn-outline" onclick="loadLeaderboard()">Show top helpers</button>
+      <div class="lb-list" id="lb-list"></div>
+      <hr class="divider"/>
+      <div class="section-head"><span class="emoji">📋</span> Recent Reports</div>
+      <div style="display:flex;gap:8px">
+        <input id="filter-city" placeholder="Filter by city" style="flex:1"/>
+        <button class="btn btn-outline" style="width:auto;padding:10px 16px" onclick="loadReports()">Go</button>
+      </div>
+      <div class="report-list" id="report-list"></div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-controls">
+      <button class="map-btn active" id="btn-heatmap" onclick="toggleLayer('heatmap')">🔥 Issue Map</button>
+      <button class="map-btn" id="btn-safezones" onclick="toggleLayer('safezones')">✅ Safe Zones</button>
+      <button class="map-btn" id="btn-priority" onclick="loadPriority()">⚑ Priority Issues</button>
+    </div>
+    <div class="map-legend">
+      <div class="legend-title">Map Legend</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Minor issue</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Moderate issue</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Urgent issue</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ec4899"></div>SOS / Emergency</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;opacity:0.4"></div>Safe zone</div>
+    </div>
+    <div class="map-tip">📍 Tap map to pick coordinates</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+let activeUser = null;
+let activeCoins = 0;
+let selectedSeverity = "Low";
+let heatmapMarkers = [];
+let safeZoneMarkers = [];
+let priorityMarkers = [];
+let clickMarker = null;
+let activeLayer = "heatmap";
+
+// ── THEME ──
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('safepath-theme', isDark ? 'light' : 'dark');
+  updateMapTiles();
+}
+
+function updateMapTiles() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  map.eachLayer(l => { if (l._url) map.removeLayer(l); });
+  const tileUrl = isDark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(map);
+}
+
+// restore saved theme
+const savedTheme = localStorage.getItem('safepath-theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+document.getElementById('themeBtn').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+// ── MAP ──
+const map = L.map('map').setView([12.97, 77.59], 12);
+const isDarkOnLoad = savedTheme === 'dark';
+L.tileLayer(
+  isDarkOnLoad
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { maxZoom: 19 }
+).addTo(map);
+
+map.on('click', (e) => {
+  const { lat, lng } = e.latlng;
+  document.getElementById('r-lat').value = lat.toFixed(6);
+  document.getElementById('r-lng').value = lng.toFixed(6);
+  document.getElementById('sos-lat').value = lat.toFixed(6);
+  document.getElementById('sos-lng').value = lng.toFixed(6);
+  if (clickMarker) map.removeLayer(clickMarker);
+  clickMarker = L.circleMarker([lat, lng], {
+    radius: 8, color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.6, weight: 2
+  }).addTo(map).bindPopup(`📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`).openPopup();
+  toast('📍 Location pinned! Fill in the rest and submit 😊', 'info');
+});
+
+// ── TABS ──
+function switchTab(name) {
+  const names = ['register','report','sos','explore'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i] === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+}
+
+// ── TOAST ──
+let toastTimer;
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ── SEVERITY ──
+function selectSev(el) {
+  document.querySelectorAll('.sev-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSeverity = el.dataset.val;
+}
+
+// ── REGISTER ──
+async function register() {
+  const username = document.getElementById('reg-username').value.trim();
+  if (!username) return toast('Please enter a username 😊', 'error');
+  try {
+    const res = await fetch(`${API}/register`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ username })
+    });
+    const data = await res.json();
+    if (res.status === 409) return toast('That username is taken, try another! 🙈', 'error');
+    if (!res.ok) return toast(data.detail || 'Something went wrong', 'error');
+    setActiveUser(data.username, data.coins || 0);
+    showOutput('reg-output', { '✅ Welcome': data.username, '🪙 Starting coins': data.coins });
+    toast(`Yay! Welcome to SafePath, ${data.username}! 🎉`, 'success');
+  } catch { toast('Cannot reach the server. Is it running? 🤔', 'error'); }
+}
+
+async function loginUser() {
+  const username = document.getElementById('login-username').value.trim();
+  if (!username) return toast('Enter your username 😊', 'error');
+  try {
+    const res = await fetch(`${API}/user/${username}`);
+    if (!res.ok) return toast("Hmm, can't find that user 🙈", 'error');
+    const data = await res.json();
+    setActiveUser(data.username, data.coins);
+    toast(`Welcome back, ${data.username}! 👋`, 'success');
+  } catch { toast('Cannot reach the server. Is it running? 🤔', 'error'); }
+}
+
+function setActiveUser(username, coins) {
+  activeUser = username;
+  activeCoins = coins;
+  document.getElementById('headerUser').textContent = username;
+  document.getElementById('headerCoins').textContent = coins;
+}
+
+// ── REPORT ──
+async function sendReport() {
+  if (!activeUser) return toast('Please log in first! 😊', 'error');
+  const body = {
+    username: activeUser,
+    city: document.getElementById('r-city').value.trim(),
+    location: document.getElementById('r-location').value.trim(),
+    issue: document.getElementById('r-issue').value.trim(),
+    latitude: parseFloat(document.getElementById('r-lat').value) || null,
+    longitude: parseFloat(document.getElementById('r-lng').value) || null,
+    severity: selectedSeverity
+  };
+  if (!body.city || !body.location || !body.issue) return toast('Please fill in all the fields! 📝', 'error');
+  try {
+    const res = await fetch(`${API}/report`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) return toast(data.detail || 'Could not submit report', 'error');
+    setActiveUser(activeUser, data.total_coins);
+    showOutput('report-output', {
+      '✅ Status': 'Report submitted!',
+      '🪙 Coins earned': `+${data.coins_earned}`,
+      '💰 Total coins': data.total_coins
+    });
+    toast(`Report submitted! You earned +${data.coins_earned} coins 🎉`, 'success');
+    loadHeatmap();
+  } catch { toast('Cannot reach the server. Is it running? 🤔', 'error'); }
+}
+
+// ── SOS ──
+async function sendSOS() {
+  if (!activeUser) return toast('Please log in first! 😊', 'error');
+  const body = {
+    username: activeUser,
+    city: document.getElementById('sos-city').value.trim(),
+    location: document.getElementById('sos-location').value.trim(),
+    issue: document.getElementById('sos-issue').value.trim(),
+    latitude: parseFloat(document.getElementById('sos-lat').value) || null,
+    longitude: parseFloat(document.getElementById('sos-lng').value) || null,
+  };
+  if (!body.city || !body.location || !body.issue) return toast('Please fill in all fields! 📝', 'error');
+  try {
+    const res = await fetch(`${API}/sos`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) return toast(data.detail || 'SOS failed', 'error');
+    showOutput('sos-output', { '🆘 Alert sent!': `Report #${data.report_id}` });
+    toast('🆘 Emergency alert sent! Stay safe!', 'error');
+    loadHeatmap();
+  } catch { toast('Cannot reach the server. Is it running? 🤔', 'error'); }
+}
+
+// ── HEATMAP ──
+async function loadHeatmap(city = '') {
+  clearMarkers(heatmapMarkers);
+  const url = city ? `${API}/heatmap?city=${encodeURIComponent(city)}` : `${API}/heatmap`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    data.forEach(p => {
+      const color = p.status === 'URGENT' ? '#ec4899'
+                  : p.severity === 'High'   ? '#ef4444'
+                  : p.severity === 'Medium' ? '#f59e0b' : '#10b981';
+      const m = L.circleMarker([p.lat, p.lng], {
+        radius: p.severity === 'High' ? 11 : p.severity === 'Medium' ? 8 : 7,
+        color, fillColor: color, fillOpacity: 0.6, weight: 2.5
+      }).addTo(map).bindPopup(`
+        <div style="font-family:Nunito,sans-serif;font-weight:700">
+          <div style="font-size:0.95rem">${p.issue}</div>
+          <div style="color:${color};margin-top:4px;font-size:0.8rem">● ${p.severity}</div>
+        </div>
+      `);
+      heatmapMarkers.push(m);
+    });
+  } catch { toast('Could not load map data 😔', 'error'); }
+}
+
+// ── SAFE ZONES ──
+async function loadSafeZones(city = '') {
+  clearMarkers(safeZoneMarkers);
+  const url = city ? `${API}/safe-zones?city=${encodeURIComponent(city)}` : `${API}/safe-zones`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    data.forEach(p => {
+      const m = L.circleMarker([p.lat, p.lng], {
+        radius: 14, color: '#7c3aed', fillColor: '#7c3aed',
+        fillOpacity: 0.15, weight: 2, dashArray: '5,5'
+      }).addTo(map).bindPopup(`<b>✅ Safe Zone</b><br>Score: ${p.score}/100`);
+      safeZoneMarkers.push(m);
+    });
+  } catch { toast('Could not load safe zones 😔', 'error'); }
+}
+
+// ── PRIORITY ──
+async function loadPriority() {
+  clearMarkers(priorityMarkers);
+  document.getElementById('btn-priority').classList.toggle('active');
+  try {
+    const res = await fetch(`${API}/priority?limit=20`);
+    const data = await res.json();
+    data.forEach(r => {
+      if (!r.latitude || !r.longitude) return;
+      const m = L.marker([r.latitude, r.longitude], {
+        icon: L.divIcon({
+          html: `<div style="background:#ef4444;color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;box-shadow:0 2px 8px rgba(239,68,68,0.5)">!</div>`,
+          iconSize: [20,20], className: ''
+        })
+      }).addTo(map).bindPopup(`<b>⚠️ ${r.issue}</b><br>${r.city} — ${r.severity}`);
+      priorityMarkers.push(m);
+    });
+    toast(`Loaded ${data.length} priority issues 📍`, 'info');
+  } catch { toast('Could not load priority list 😔', 'error'); }
+}
+
+// ── LAYER TOGGLE ──
+function toggleLayer(layer) {
+  activeLayer = activeLayer === layer ? null : layer;
+  document.getElementById('btn-heatmap').classList.toggle('active', activeLayer === 'heatmap');
+  document.getElementById('btn-safezones').classList.toggle('active', activeLayer === 'safezones');
+  if (activeLayer === 'heatmap') { clearMarkers(safeZoneMarkers); loadHeatmap(); }
+  else if (activeLayer === 'safezones') { clearMarkers(heatmapMarkers); loadSafeZones(); }
+  else { clearMarkers(heatmapMarkers); clearMarkers(safeZoneMarkers); }
+}
+
+// ── CITY SCORE ──
+async function getCityScore() {
+  const city = document.getElementById('score-city').value.trim();
+  if (!city) return toast('Enter a city name 😊', 'error');
+  try {
+    const res = await fetch(`${API}/city-score/${encodeURIComponent(city)}`);
+    const data = await res.json();
+    if (!res.ok) return toast(data.detail || 'City not found', 'error');
+    const scoreColor = data.safety_score >= 70 ? '#10b981' : data.safety_score >= 40 ? '#f59e0b' : '#ef4444';
+    const emoji = data.safety_score >= 70 ? '😊' : data.safety_score >= 40 ? '😐' : '😟';
+    const el = document.getElementById('score-output');
+    el.classList.add('visible');
+    el.innerHTML = `
+      <div style="text-align:center;margin-bottom:8px">
+        <div style="font-size:2rem">${emoji}</div>
+        <div style="font-size:1.4rem;font-weight:900;color:${scoreColor}">${data.safety_score}<span style="font-size:0.9rem;color:var(--muted)">/100</span></div>
+        <div style="font-weight:700;color:var(--text)">${data.city} Safety Score</div>
+      </div>
+      <div class="score-bar-bg"><div class="score-bar-fill" style="width:${data.safety_score}%;background:${scoreColor}"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:0.78rem">
+        <span>🔴 High: <b>${data.high_count}</b></span>
+        <span>🟡 Med: <b>${data.medium_count}</b></span>
+        <span>🟢 Low: <b>${data.low_count}</b></span>
+        <span>📋 Total: <b>${data.total_reports}</b></span>
+      </div>`;
+    loadHeatmap(city);
+  } catch { toast('Could not fetch city score 😔', 'error'); }
+}
+
+// ── LEADERBOARD ──
+async function loadLeaderboard() {
+  try {
+    const res = await fetch(`${API}/leaderboard?limit=10`);
+    const data = await res.json();
+    const el = document.getElementById('lb-list');
+    el.innerHTML = '';
+    const medals = ['🥇','🥈','🥉'];
+    data.forEach((u, i) => {
+      const div = document.createElement('div');
+      div.className = 'lb-item';
+      div.innerHTML = `<span class="lb-rank">${medals[i] || `#${i+1}`}</span><span class="lb-name">${u.username}</span><span class="lb-coins">🪙 ${u.coins}</span>`;
+      el.appendChild(div);
+    });
+    if (!data.length) el.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:10px">No heroes yet — be the first! 🦸</div>';
+  } catch { toast('Could not load leaderboard 😔', 'error'); }
+}
+
+// ── REPORTS ──
+async function loadReports() {
+  const city = document.getElementById('filter-city').value.trim();
+  const url = city ? `${API}/reports?city=${encodeURIComponent(city)}&limit=10` : `${API}/reports?limit=10`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const el = document.getElementById('report-list');
+    el.innerHTML = '';
+    data.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'report-card';
+      div.innerHTML = `
+        <div class="r-top"><span class="r-issue">${r.issue}</span><span class="sev-tag sev-${r.severity}">${r.severity}</span></div>
+        <div class="r-meta">📍 ${r.city} · ${r.location} · ${r.status}</div>`;
+      el.appendChild(div);
+    });
+    if (!data.length) el.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:10px">No reports found 🌟 This city looks great!</div>';
+  } catch { toast('Could not load reports 😔', 'error'); }
+}
+
+// ── HELPERS ──
+function clearMarkers(arr) { arr.forEach(m => map.removeLayer(m)); arr.length = 0; }
+function showOutput(id, fields) {
+  const el = document.getElementById(id);
+  el.classList.add('visible');
+  el.innerHTML = Object.entries(fields).map(([k,v]) =>
+    `<div><span class="out-label">${k}: </span><span class="out-val">${v}</span></div>`
+  ).join('');
+}
+
+loadHeatmap();
+</script>
+</body>
+</html>
