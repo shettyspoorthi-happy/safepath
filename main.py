@@ -5,6 +5,7 @@ from enum import Enum
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from datetime import datetime, timezone
+from fastapi.responses import FileResponse
 import hashlib
 
 app = FastAPI(title="SafePath Smart City System 🚀", version="3.1.0")
@@ -407,3 +408,6 @@ def priority(limit: int = Query(default=10, le=50), db: Session = Depends(get_db
 def leaderboard(limit: int = Query(default=10, le=50), db: Session = Depends(get_db)):
     users = db.query(User).order_by(User.coins.desc()).limit(limit).all()
     return [{"username": u.username, "coins": u.coins} for u in users]
+@app.get("/")
+def read_root():
+    return FileResponse("index.html")
