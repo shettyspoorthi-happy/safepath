@@ -119,15 +119,6 @@ def get_db():
     finally:
         db.close()
 
-
-# =========================
-# HOME
-# =========================
-@app.get("/")
-def home():
-    return {"message": "SafePath API running 🚀", "version": "3.1.0"}
-
-
 # =========================
 # REGISTER
 # =========================
